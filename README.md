@@ -1,69 +1,92 @@
-# Yttrium a Build engine for the new era
+# Yttrium - The new next thing for build things
 
-Yttrium is a Build engine that is used directly as a Go lib
+Yttrium is a "build engine" this means is 100% centered on build things
 
-that is mostly adapted for C/C++ but it can build anything else
+and that is just abstract enough for build anything but easily
 
-So first you would be asking what is a "Build engine"?
+# What does Build engine means?
 
-## Build engine
+An Build engine it just refer to a tool or in this case lib
 
-This refer to a lib, framework or app that can be used for build anything in a simple way for example Docker!
+capable of build anything but with enough commodities is not just an script
 
-Docker is not technically a pure a Build engine but is very close!
+a example could be Docker this tool allow you to build things why is not an build engine?
 
-So in Docker you can describe instructions that build things
+well Docker is centered on Containers not building
 
-The thing is that docker is not focused on Build is focused on Containers and a "Build engine" is centered in building things
+# Okay so how I use this wonderful new thing?
 
-## How use Yttrium
+Is really simple actually!
 
-You have your project so you first need to have Go installed
+1.  Have go installed I don't think I need to explain this to you
 
-Okay so now you setup a basic Go project, here is a guide step to step of how do so if you aren't familiar to Go
+    there are tons of tutorials for this online and that can
 
-The standard for make a Yttrium project is
+    explain it better than I could.
 
-```sh
-mkdir build
-cd build
-go mod init build-YOUR-PROJECT-NAME-GOES-HERE
-```
+2.  Make init a Go project
 
-And now you make a new file called
+    First make a folder into your current project where you want to use Yttrium
+
+    and then init a go module here is the show of it!
+
+    ```sh
+    mkdir build
+    cd build
+    go mod build-MYPROJECTNAME # you also can do github.com/MyUser/MyProject/build
+    ```
+
+3.  Make your first Yttrium program!
+
+okay so now make an main.go file yeah no trick no random file that need a cli just normal main.go file
+
+so let's try an simple Build here,
+
+NOTE:this doesn't build nothing is just an example of basic Yttrium apis aka Build and CommandRunner
 
 main.go:
-
-with this code for example
 
 ```go
 package main
 
 import (
-    "github.com/brun-t/Yttrium"
+    "fmt"
+    "github.com/brun-t/yttrium"
 )
+
+type BasicBuild struct {
+    file string
+}
+
+func (bb BasicBuild) Setup(yt *Yttrium) Build {
+    return bb // not any init need
+}
+
+func (bb BasicBuild) Run(yt *Yttrium) error {
+    cr := Yttrium.NewCommandRunner()
+
+    result, err := cr.Exec("cat", bb.file)
+
+    fmt.Printf("%s contents:%s", bb.file, string(result))
+
+    return err
+}
 
 func main() {
     yt := Yttrium.New()
 
-    exe := yt.Executable("my-app")
+    bb := yt.Use(BasicBuild{file:"myfile.txt"})
 
-    exe.AddSources("src/main.cpp")
-
-    exe.AddIncludes("includes", "thirdparty/STB")
-
-    yt.Run(exe)
+    panic(yt.Run(bb))
 }
+
 ```
 
-then you do this
+and last step let's run it!
+
+just do this in your shell
 
 ```sh
-go mod tidy
-
-# and now just exec it!
-
-go run .
+go mod tidy # this install Yttrium in your local project
+go run . # this is the actual command that runs the app
 ```
-
-And done! you learned basic Yttrium setup
