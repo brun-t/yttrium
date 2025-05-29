@@ -32,6 +32,7 @@ func (yt *Yttrium) Run(b Build) error {
 }
 
 // It setups and AsyncBuild
+// IMPORTANT: the Setup itself is not async this is just for a AsyncBuild
 func (yt *Yttrium) AsyncUse(b AsyncBuild) AsyncBuild {
 	return b.Setup(yt)
 }
@@ -95,4 +96,60 @@ func (yt *Yttrium) AsyncRuns(ctx context.Context, b ...AsyncBuild) []error {
 		}
 		return errs
 	}(errChan)
+}
+
+func (yt *Yttrium) RunTasks(ctx context.Context, t ...*Task) []error {
+	sorted, err := TopoSort(t)
+
+	if err != nil {
+		return []error{err}
+	}
+
+	var mutex sync.RWMutex
+	taskWaitGroups := make(map[string]*sync.WaitGroup)
+	errChan := make(chan error, len(t))
+	var wg sync.WaitGroup
+
+	for _, task := range sorted {
+		taskWaitGroups[task.ID] = &sync.WaitGroup{}
+		taskWaitGroups[task.ID].Add(1)
+	}
+
+	wg.Add(len(sorted))
+	for _, task := range sorted {
+		go func(task *Task) {
+			defer func() {
+				if r := recover(); r != nil {
+					if err, ok := r.(error); ok {
+						errChan <- err
+					} else {
+						errChan <- fmt.Errorf("panic: %v", r)
+					}
+				}
+				taskWaitGroups[task.ID].Done()
+				wg.Done()
+			}()
+
+			// Wait for all dependencies to finish
+			for _, dep := range task.Deps {
+				taskWaitGroups[dep.ID].Wait()
+			}
+
+			// Run the build task
+			task.Build.Run(yt, &mutex, ctx)
+		}(task)
+	}
+
+	// Wait for all goroutines to finish and then close error channel
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+
+	return errs
 }
