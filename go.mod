@@ -1,4 +1,4 @@
-module github.com/brun-t/Yttrium
+module github.com/brun-t/yttrium
 
 go 1.24.2
 
