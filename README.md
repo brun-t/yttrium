@@ -50,35 +50,41 @@ main.go:
 package main
 
 import (
-    "fmt"
-    "github.com/brun-t/yttrium"
+	"fmt"
+	"os"
+
+	"github.com/brun-t/yttrium"
 )
 
 type BasicBuild struct {
-    file string
+	file string
 }
 
-func (bb BasicBuild) Setup(yt *Yttrium) Build {
-    return bb // not any init need
+func (bb BasicBuild) Setup(yt *yttrium.Yttrium) yttrium.Build {
+	return bb // not any init need
 }
 
-func (bb BasicBuild) Run(yt *Yttrium) error {
-    cr := Yttrium.NewCommandRunner()
+func (bb BasicBuild) Run(yt *yttrium.Yttrium) error {
+	cr := yttrium.NewCommandRunner()
 
-    result, err := cr.Exec("cat", bb.file)
+	result, err := cr.Exec("cat", bb.file)
 
-    fmt.Printf("%s contents:%s", bb.file, string(result))
+	fmt.Printf("%s contents:%s", bb.file, string(result))
 
-    return err
+	return err
 }
 
 func main() {
-    yt := Yttrium.New()
+	yt := yttrium.New()
 
-    bb := yt.Use(BasicBuild{file:"myfile.txt"})
+	bb := yt.Use(BasicBuild{file: "myfile.txt"})
 
-    panic(yt.Run(bb))
+	if err := yt.Run(bb); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
+
 
 ```
 
@@ -90,4 +96,3 @@ just do this in your shell
 go mod tidy # this install Yttrium in your local project
 go run . # this is the actual command that runs the app
 ```
-
